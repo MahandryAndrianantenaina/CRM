@@ -11,6 +11,7 @@ import itu.com.CRM.features.request.LoginRequest;
 import itu.com.CRM.features.result.LoginResult;
 import itu.com.CRM.response.ApiSuccessResult;
 import itu.com.CRM.service.SecurityService;
+import jakarta.servlet.http.HttpSession;
 
 @Controller
 public class SecurityController {
@@ -30,22 +31,29 @@ public class SecurityController {
     public String login(
         @RequestParam String email,
         @RequestParam String password,
+        HttpSession session,
         RedirectAttributes redirectAttributes,
         Model model
     ) {
         LoginRequest request = new LoginRequest();
         request.setEmail(email);
         request.setPassword(password);
-
-        ApiSuccessResult<LoginResult> result = _securityService.login(request);
-
-        if (result != null && result.getContent() != null && result.getContent().getData() != null) {
-            model.addAttribute("user", result.getContent().getData());
-            return "redirect:/Dashboard/Home";
+        if (email.equals("admin@root.com") && password.equals("123456")) {
+            ApiSuccessResult<LoginResult> result = _securityService.login(request);
+            if (result != null && result.getContent() != null && result.getContent().getData() != null) {
+                session.setAttribute("user", result.getContent().getData());
+                session.setAttribute("security", result.getContent().getData().getAccessToken());
+                redirectAttributes.addFlashAttribute("action", true);
+                return "redirect:/Dashboard/Home";
+            } else {
+                redirectAttributes.addFlashAttribute("error", "Invalid login credentials.");
+                return "redirect:/"; 
+            }
         } else {
-            redirectAttributes.addFlashAttribute("error", "Invalid login credentials. NotSucceeded.");
+            redirectAttributes.addFlashAttribute("error", "Unauthorized accès.");
             return "redirect:/"; 
         }
+
     }
 }
 

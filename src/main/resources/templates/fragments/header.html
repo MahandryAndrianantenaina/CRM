@@ -22,4 +22,18 @@
     <!-- App CSS -->
     <link rel="stylesheet" th:href="@{/css/app-light.css}" id="lightTheme">
     <link rel="stylesheet" th:href="@{/css/app-dark.css}" id="darkTheme" disabled>
+    <script th:src="@{/js/fonction.js}"></script>
+    
+    <script th:inline="javascript" th:if="${action}">
+        /*<![CDATA[*/
+        document.addEventListener("DOMContentLoaded", function() {
+            let token = /*[[${session.security}]]*/ null; // Injection de la variable de session
+            if (token) {
+                localStorage.setItem('.JAVA.application', token);
+                const expirationTime = new Date().getTime() + 30 * 60 * 1000; 
+                localStorage.setItem('JAVAapplicationExpiration', expirationTime);
+            } 
+        });
+        /*]]>*/
+    </script>
 </head>

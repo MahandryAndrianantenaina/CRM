@@ -9,7 +9,7 @@
         <div class="align-items-center h-100 d-flex w-50 mx-auto">
             <div class="mx-auto text-center">
                 <h1 class="display-1 m-0 font-weight-bolder text-muted" style="font-size:80px;">
-                    <span th:text="${errorCode} ?: '500'"></span>
+                    <span th:text="${errorCode} ?: '500'">500</span>
                 </h1>
                 <h1 class="mb-1 text-muted font-weight-bold">OOPS!</h1>
                 <h6 class="mb-3 text-muted" th:text="${errorMessage} ?: 'Something went wrong here.'">
@@ -20,12 +20,12 @@
                         Error Type: <span th:text="${errorType}"></span>
                     </p>
                 </div>
-                <div th:if="${stackTrace != null}">
+                <div th:if="${stackFullTrace != null}">
                     <p class="text-muted">
-                        Stack Trace: <span th:text="${stackTrace}"></span>
+                        Stack Trace: <span th:text="${stackFullTrace}"></span>
                     </p>
                 </div>
-                <a th:href="@{/}" class="btn btn-lg btn-primary px-5">Back to Login</a>
+                <a th:href="@{/}" class="btn btn-lg btn-primary px-5">Back to Home</a>
             </div>
         </div>
     </div>
