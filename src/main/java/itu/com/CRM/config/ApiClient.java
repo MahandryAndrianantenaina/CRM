@@ -4,10 +4,10 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.servlet.ModelAndView;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import itu.com.CRM.exception.ApiException;
 import itu.com.CRM.response.ApiErrorResult;
 import itu.com.CRM.service.TokenStorageService;
 
@@ -39,30 +39,30 @@ public class ApiClient {
     public <T, R> T callApi(String endpoint, HttpMethod method, R request, ParameterizedTypeReference<T> responseType) {
         String token = _tokenStorageService.getToken(); 
         if (token == null && !endpoint.equals("/Security/Login")) {
-            throw new RuntimeException("No authentication token found. Please log in first.");
+            throw new ApiException(500, "No authentication token found. Please log in first.", null, null);
         }
-
+    
         String url = _apiBaseUrl + endpoint;
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         if (token != null) {
             headers.setBearerAuth(token);
         }
-
+    
         HttpEntity<R> entity = new HttpEntity<>(request, headers);
-
+    
         ResponseEntity<T> response = _restTemplate.exchange(
             url,
             method,
             entity,
             responseType
         );
-
+    
         if (response.getStatusCode() == HttpStatus.OK) {
             return response.getBody();
         } else {
             ApiErrorResult errorResult = parseResponse(response.getBody().toString(), ApiErrorResult.class);
-            handleError(errorResult);
+            handleError(errorResult); 
             return null; 
         }
     }
@@ -80,15 +80,12 @@ public class ApiClient {
         }
     }
 
-    private ModelAndView handleError(ApiErrorResult errorResult) {
-        ModelAndView modelAndView = new ModelAndView("erreur"); 
-        modelAndView.addObject("errorCode", errorResult.getCode());
-        modelAndView.addObject("errorMessage", errorResult.getMessage());
-        if (errorResult.getError() != null) {
-            modelAndView.addObject("errorType", errorResult.getError().getExceptionType());
-            modelAndView.addObject("stackTrace", errorResult.getError().getStackTrace());
-        }
-
-        return modelAndView;
+    private void handleError(ApiErrorResult errorResult) {
+        int errorCode = errorResult.getCode();
+        String errorMessage = errorResult.getMessage();
+        String errorType = (errorResult.getError() != null) ? errorResult.getError().getExceptionType() : null;
+        String stackTrace = (errorResult.getError() != null) ? errorResult.getError().getStackTrace() : null;
+    
+        throw new ApiException(errorCode, errorMessage, errorType, stackTrace);
     }
 }

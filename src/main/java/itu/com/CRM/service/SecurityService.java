@@ -7,6 +7,8 @@ import itu.com.CRM.config.ApiClient;
 import itu.com.CRM.features.request.LoginRequest;
 import itu.com.CRM.features.result.LoginResult;
 import itu.com.CRM.response.ApiSuccessResult;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Service
 public class SecurityService {
@@ -22,8 +24,10 @@ public class SecurityService {
         ParameterizedTypeReference<ApiSuccessResult<LoginResult>> responseType = 
             new ParameterizedTypeReference<ApiSuccessResult<LoginResult>>() {};
         ApiSuccessResult<LoginResult> result = _apiClient.callApi(endpoint, HttpMethod.POST, request, responseType);
-        String token = result.getContent().getData().getAccessToken(); 
-        _apiClient.setToken(token);
+        if (result.getContent() != null) {
+            String token = result.getContent().getData().getAccessToken(); 
+            _apiClient.setToken(token);
+        }
         return result;
     }
 }

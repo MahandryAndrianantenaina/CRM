@@ -7,6 +7,7 @@
 <body class="vertical light">
     <!-- Inclusion du fragment navbar -->
     <div class="wrapper">
+      
         <div th:replace="~{fragments/navbar :: navbar}"></div>
 
         <!-- Contenu principal de la page -->
@@ -88,6 +89,42 @@
                           </div>
                         </div>
                       </div>
+                      <div class="col-md-5">
+                        <div class="card shadow mb-4">
+                          <div class="card-header">
+                            <strong>Budget allocation</strong>
+                          </div>
+                          <div class="card-body">
+                            <div class="row">
+                              <div class="col-md-12">
+                                <div id="chart-box">
+                                  <div id="campaignChartWidget"></div>
+                                </div>
+                              </div>
+                            </div> 
+                          </div> 
+                        </div> 
+                      </div>
+                      <div class="col-md-7">
+                        <div class="card shadow">
+                          <div class="card-header">
+                            <strong class="card-title mb-0">Expenses vs. Budgets</strong>
+                          </div>
+                          <div class="card-body">
+                            <div id="columnChart"></div>
+                          </div> <!-- /.card-body -->
+                        </div> <!-- /.card -->
+                      </div> 
+                      <div class="col-md-12">
+                        <div class="card shadow">
+                          <div class="card-header">
+                            <strong class="card-title mb-0">Expense Trends Over Time</strong>
+                          </div>
+                          <div class="card-body">
+                            <div id="lineChart"></div>
+                          </div> <!-- /.card-body -->
+                        </div> <!-- /.card -->
+                      </div>
                     </div>
                   </div>
                 </div> 
@@ -97,3 +134,517 @@
     <div th:replace="~{fragments/footer :: footer}"></div>
 </body>
 </html>
+<script th:inline="javascript">
+/*<![CDATA[*/
+
+  document.addEventListener("DOMContentLoaded", function() {
+    const axiosInstance = axios.create({
+        baseURL: 'http://localhost:5249/api/',
+        headers: {
+            'Authorization': `Bearer ${getToken()}`
+        }
+    });
+
+    // Récupération des données pour le chart
+    async function loadCampaignBudgetData() {
+      try {
+          const response = await axiosInstance.get('Dashboard/GetCampaignBudget');
+          
+          // Extraction des données
+          const campaignData = response.data.content.data;
+  
+          // Vérification des données
+          if (!Array.isArray(campaignData)) {
+              throw new Error('Les données reçues ne sont pas un tableau');
+          }
+  
+          // Transformation des données pour ApexCharts
+          const labels = campaignData.map(item => item.campaignName);
+          const series = campaignData.map(item => {
+              const budget = Number(item.campaignBudget);
+              if (isNaN(budget)) {
+                  console.error('Invalid budget value:', item.campaignBudget);
+                  return 0; // or handle the error as needed
+              }
+              return budget;
+          });
+  
+          // Mise à jour du chart
+          if (Array.isArray(series) && Array.isArray(labels)) {
+              campaignChartWidget.updateOptions({
+                  series: series,
+                  labels: labels
+              });
+          } else {
+              console.error('Series or Labels is not an array:', { series, labels });
+          }
+  
+      } catch (error) {
+          let errorMsg = 'Erreur Interne du serveur';
+          if (axios.isAxiosError(error)) {
+              errorMsg = `Erreur ${error.code ?? 'INCONNUE'}: ${error.message}`;
+              
+              if (error.response) {
+                  errorMsg = error.response.data?.message?.trim();
+              } else {
+                  errorMsg = error.message;
+              }
+          }
+      
+          Swal.fire({
+              icon: 'error',
+              title: 'Échec du chargement',
+              html: `<div class="text-start">
+                      <p>Code ${error.response?.status ?? '500'} : ${errorMsg}</p>
+                    </div>`
+          });
+      }
+  }
+
+    async function loadCampaignExpenseData() {
+      try {
+          const response = await axiosInstance.get('Dashboard/GetCampaignExpense');
+          
+          // Extraction des données
+          const campaignData = response.data.content.data;
+
+          // Vérification des données
+          if (!Array.isArray(campaignData)) {
+              throw new Error('Les données reçues ne sont pas un tableau');
+          }
+
+          // Transformation des données pour ApexCharts
+          const labels = campaignData.map(item => Date.parse(item.expenseDate));
+          const series1 = campaignData.map(item => {
+              const budget = Number(item.campaignExpense);
+              if (isNaN(budget)) {
+                  console.error('Invalid budget value:', item.campaignExpense);
+                  return 0; // or handle the error as needed
+              }
+              return budget;
+          });
+
+          // Mise à jour du chart
+          if (Array.isArray(series1) && Array.isArray(labels)) {
+              lineChart.updateOptions({
+                  series: [
+                      { name: 'Expense', data: series1 }
+                  ],
+                  xaxis: {
+                      categories: labels
+                  }
+              });
+          } else {
+              console.error('Series or Labels is not an array:', { series1, labels });
+          }
+
+      } catch (error) {
+          let errorMsg = 'Erreur Interne du serveur';
+          if (axios.isAxiosError(error)) {
+              errorMsg = `Erreur ${error.code ?? 'INCONNUE'}: ${error.message}`;
+              
+              if (error.response) {
+                  errorMsg = error.response.data?.message?.trim();
+              } else {
+                  errorMsg = error.message;
+              }
+          }
+      
+          Swal.fire({
+              icon: 'error',
+              title: 'Échec du chargement',
+              html: `<div class="text-start">
+                      <p>Code ${error.response?.status ?? '500'} : ${errorMsg}</p>
+                    </div>`
+          });
+      }
+  }
+
+    async function loadCampaignBudgetExpenseData() {
+        try {
+            const response = await axiosInstance.get('Dashboard/GetCampaignBudgetExpense');
+            
+            // Extraction des données
+            const campaignData = response.data.content.data;
+
+            // Vérification des données
+            if (!Array.isArray(campaignData)) {
+                throw new Error('Les données reçues ne sont pas un tableau');
+            }
+
+            // Transformation des données pour ApexCharts
+            const labels = campaignData.map(item => item.campaignName);
+            const series1 = campaignData.map(item => {
+                const budget = Number(item.campaignBudget) / 1000;
+                if (isNaN(budget)) {
+                    console.error('Invalid budget value:', item.campaignBudget);
+                    return 0; // or handle the error as needed
+                }
+                return budget;
+            });
+            const series2 = campaignData.map(item => {
+                const budget = Number(item.campaignExpense) / 1000;
+                if (isNaN(budget)) {
+                    console.error('Invalid budget value:', item.campaignExpense);
+                    return 0; // or handle the error as needed
+                }
+                return budget;
+            });
+
+            // Mise à jour du chart
+            if (Array.isArray(series1) && Array.isArray(series2) && Array.isArray(labels)) {
+                columnChart.updateOptions({
+                    series: [
+                        { name: 'Budget', data: series1 },
+                        { name: 'Expense', data: series2 }
+                    ],
+                    xaxis: {
+                        categories: labels
+                    }
+                });
+            } else {
+                console.error('Series or Labels is not an array:', { series1, series2, labels });
+            }
+
+        } catch (error) {
+            let errorMsg = 'Erreur Interne du serveur';
+            if (axios.isAxiosError(error)) {
+                errorMsg = `Erreur ${error.code ?? 'INCONNUE'}: ${error.message}`;
+                
+                if (error.response) {
+                    errorMsg = error.response.data?.message?.trim();
+                } else {
+                    errorMsg = error.message;
+                }
+            }
+        
+            Swal.fire({
+                icon: 'error',
+                title: 'Échec du chargement',
+                html: `<div class="text-start">
+                        <p>Code ${error.response?.status ?? '500'} : ${errorMsg}</p>
+                      </div>`
+            });
+        }
+    }
+
+
+
+    // Initialisation du chart avec données par défaut
+    var campaignChartWidget;
+    var campaignChartWidgetOptions = {
+        series: [0], // Initialiser avec un tableau contenant une valeur fictive
+        chart: {
+            type: "donut",
+            height: 270,
+            zoom: { enabled: false },
+            toolbar: { show: false }
+        },
+        labels: ['Loading...'],// Initialiser avec un tableau vide
+        theme: { mode: colors.chartTheme },
+        plotOptions: {
+            pie: {
+                donut: {
+                    size: "60%",
+                    background: "transparent"
+                },
+                expandOnClick: false
+            }
+        },
+        dataLabels: {
+            enabled: false,
+        },
+        legend: { show: false },
+        stroke: {
+            width: 1,
+            dashArray: 0
+        },
+        fill: {
+            opacity: 1
+        }
+    };
+
+    campaignChartWidget = new ApexCharts(
+        document.querySelector("#campaignChartWidget"),
+        campaignChartWidgetOptions
+    );
+    campaignChartWidget.render();
+
+    var columnChart;
+    var columnChartOptions = {
+        series: [
+            { name: 'Budget', data: [] },
+            { name: 'Expense', data: [] }
+        ],
+        chart: {
+            type: "bar",
+            height: 259,
+            zoom: { enabled: false },
+            toolbar: { show: false },
+            background: "transparent"
+        },
+        stroke: {
+          show: true,
+          width: 2,
+          colors: ['transparent']
+        },
+        theme: { mode: colors.chartTheme },
+        plotOptions: {
+            bar: {
+              horizontal: false,
+              columnWidth: "85%",
+              borderRadius: 5,
+              borderRadiusApplication: 'end'
+            }
+        },
+        dataLabels: {
+            enabled: false,
+        },
+        xaxis: {
+            type: "text",
+            categories: ['Loading...'],
+            labels: {
+                show: false,
+                trim: true,
+            },
+            axisBorder: { show: false }
+        },
+        yaxis: {
+            labels: {
+                show: true,
+                trim: false,
+                offsetX: -10,
+                minHeight: undefined,
+                maxHeight: 120,
+                style: {
+                    colors: colors.mutedColor,
+                    cssClass: "text-muted",
+                    fontFamily: base.defaultFontFamily
+                }
+            }
+        },
+        legend: { 
+            position: "top",
+            fontFamily: base.defaultFontFamily,
+            fontWeight: 400,
+            labels: {
+                colors: colors.mutedColor,
+                useSeriesColors: false
+            },
+            markers: {
+                width: 10,
+                height: 10,
+                strokeWidth: 0,
+                strokeColor: "#fff",
+                radius: 6,
+                customHTML: undefined,
+                onClick: undefined,
+                offsetX: 0,
+                offsetY: 0
+            },
+            itemMargin: {
+                horizontal: 10,
+                vertical: 0
+            },
+            onItemClick: {
+                toggleDataSeries: true
+            },
+            onItemHover: {
+                highlightDataSeries: true
+            }
+        },
+        fill: {
+            opacity: 1
+        },
+        tooltip: {
+          y: {
+            formatter: function (val) {
+              return "$ " + val + " K"
+            }
+          }
+        }
+    };
+
+    var lineChart;
+    var lineChartOptions = {
+        series: [
+            { name: 'Expense', data: [] }
+        ],
+        chart: {
+            type: "line",
+            height: 350,
+            zoom: { enabled: false },
+            toolbar: { show: false },
+            background: false
+        },
+        stroke: {
+          show: true,
+          curve: "smooth",
+          lineCap: "round",
+          colors: chartColors,
+          width: [3, 2, 3],
+          dashArray: [0, 0, 0]
+        },
+        responsive: [
+            {
+                breakpoint: 480,
+                options: {
+                    legend: {
+                        position: "bottom",
+                        offsetX: -10,
+                        offsetY: 0
+                    }
+                }
+            }
+        ],
+        theme: { mode: colors.chartTheme },
+        plotOptions: {
+            bar: {
+              horizontal: false,
+              columnWidth: "85%",
+              borderRadius: 5,
+              borderRadiusApplication: 'end'
+            }
+        },
+        markers: {
+          size: 4,
+          colors: base.primaryColor,
+          strokeColors: colors.borderColor,
+          strokeWidth: 2,
+          strokeOpacity: 0.9,
+          strokeDashArray: 0,
+          fillOpacity: 1,
+          discrete: [],
+          shape: "circle",
+          radius: 2,
+          offsetX: 0,
+          offsetY: 0,
+          onClick: undefined,
+          onDblClick: undefined,
+          showNullDataPoints: true,
+          hover: {
+              size: undefined,
+              sizeOffset: 3
+          }
+      },
+        dataLabels: {
+            enabled: false,
+        },
+        xaxis: {
+            type: "datetime",
+            categories: [],
+            labels: {
+              format: "MM/dd/yyyy",
+              show: false,
+              trim: true,
+              minHeight: undefined,
+              maxHeight: 120,
+              style: {
+                  colors: colors.mutedColor,
+                  cssClass: "text-muted",
+                  fontFamily: base.defaultFontFamily
+              }
+            },
+            axisBorder: { show: false }
+        },
+        yaxis: {
+            labels: {
+                show: true,
+                trim: false,
+                offsetX: -10,
+                minHeight: undefined,
+                maxHeight: 120,
+                style: {
+                    colors: colors.mutedColor,
+                    cssClass: "text-muted",
+                    fontFamily: base.defaultFontFamily
+                }
+            }
+        },
+        legend: { 
+            position: "top",
+            fontFamily: base.defaultFontFamily,
+            fontWeight: 400,
+            labels: {
+                colors: colors.mutedColor,
+                useSeriesColors: false
+            },
+            markers: {
+                width: 10,
+                height: 10,
+                strokeWidth: 0,
+                strokeColor: colors.borderColor,
+                radius: 6,
+                customHTML: undefined,
+                onClick: undefined,
+                offsetX: 0,
+                offsetY: 0
+            },
+            itemMargin: {
+                horizontal: 10,
+                vertical: 0
+            },
+            onItemClick: {
+                toggleDataSeries: true
+            },
+            onItemHover: {
+                highlightDataSeries: true
+            }
+        },
+        grid: {
+            show: true,
+            borderColor: colors.borderColor,
+            strokeDashArray: 0,
+            position: "back",
+            xaxis: {
+                lines: { show: false }
+            },
+            yaxis: {
+                lines: { show: true }
+            },
+            row: {
+                colors: undefined,
+                opacity: 0.5
+            },
+            column: {
+                colors: undefined,
+                opacity: 0.5
+            },
+            padding: {
+                top: 0,
+                right: 0,
+                bottom: 0,
+                left: 0
+            }
+        }
+    };
+
+    lineChart = new ApexCharts(
+        document.querySelector("#lineChart"),
+        lineChartOptions
+    );
+    lineChart.render();
+    
+    columnChart = new ApexCharts(
+        document.querySelector("#columnChart"),
+        columnChartOptions
+    );
+    columnChart.render();
+
+    campaignChartWidget = new ApexCharts(
+        document.querySelector("#campaignChartWidget"),
+        campaignChartWidgetOptions
+    );
+    campaignChartWidget.render();
+
+
+    // Charger les données
+    loadCampaignBudgetData();
+    loadCampaignBudgetExpenseData();
+    loadCampaignExpenseData();
+
+    
+  });
+
+/*]]>*/
+</script>
