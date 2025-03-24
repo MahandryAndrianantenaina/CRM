@@ -36,7 +36,7 @@
                                 <p class="small text-primary mb-0">Campaign</p>
                                 <span class="h3 mb-0" th:text="${T(itu.com.CRM.utils.NumberFormatter).formatNumberWithSpaces(item.campaignTotalAmount)}"></span>
                                 <span class="small btn mb-2 btn-link">
-                                    <a>
+                                    <a th:href="@{/Campaign/List}">
                                         <i class="fe fe-16 fe-eye text-primary mb-0"></i>
                                     </a>
                                 </span>
@@ -58,7 +58,7 @@
                                 <p class="small text-success mb-0">Budget</p>
                                 <span class="h3 mb-0" th:text="${T(itu.com.CRM.utils.NumberFormatter).formatNumberWithSpaces(item.budgetTotalAmount)}"></span>
                                 <span class="small btn mb-2 btn-link">
-                                    <a>
+                                    <a th:href="@{/Budget/List}">
                                         <i class="fe fe-16 fe-eye text-primary mb-0"></i>
                                     </a>
                                 </span>
@@ -80,7 +80,7 @@
                                 <p class="small text-danger mb-0">Expense</p>
                                 <span class="h3 mb-0" th:text="${T(itu.com.CRM.utils.NumberFormatter).formatNumberWithSpaces(item.expenseTotalAmount)}"></span>
                                 <span class="small btn mb-2 btn-link">
-                                    <a>
+                                    <a th:href="@{/Expense/List}">
                                         <i class="fe fe-16 fe-eye text-primary mb-0"></i>
                                     </a>
                                 </span>

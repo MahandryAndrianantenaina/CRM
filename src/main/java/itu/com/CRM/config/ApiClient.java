@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import itu.com.CRM.exception.ApiException;
 import itu.com.CRM.response.ApiErrorResult;
-import itu.com.CRM.service.TokenStorageService;
+import jakarta.servlet.http.HttpSession;
 
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpHeaders;
@@ -25,23 +25,22 @@ import org.springframework.http.MediaType;
 public class ApiClient {
 
     private final RestTemplate _restTemplate;
-    private final TokenStorageService _tokenStorageService;
+    private final HttpSession _session;
 
     @Value("${csharp.api.base-url}") 
     private String _apiBaseUrl;
 
-    public ApiClient(RestTemplate restTemplate, TokenStorageService tokenStorageService) {
+    public ApiClient(RestTemplate restTemplate, HttpSession session) {
         this._restTemplate = restTemplate;
-        this._tokenStorageService = tokenStorageService;
+        this._session = session;
     }
 
     @SuppressWarnings("null")
     public <T, R> T callApi(String endpoint, HttpMethod method, R request, ParameterizedTypeReference<T> responseType) {
-        String token = _tokenStorageService.getToken(); 
+        String token = (String) _session.getAttribute("security"); 
         if (token == null && !endpoint.equals("/Security/Login")) {
-            throw new ApiException(500, "No authentication token found. Please log in first.", null, null);
+            throw new ApiException(401, "No authentication token found. Please log in first.", null, null);
         }
-    
         String url = _apiBaseUrl + endpoint;
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -68,7 +67,7 @@ public class ApiClient {
     }
 
     public void setToken(String token) {
-        _tokenStorageService.setToken(token);
+        _session.setAttribute("security", token);
     }
 
     private <T> T parseResponse(String responseBody, Class<T> responseType) {

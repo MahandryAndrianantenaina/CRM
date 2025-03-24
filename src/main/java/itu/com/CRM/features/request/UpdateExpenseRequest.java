@@ -1,19 +1,17 @@
-package itu.com.CRM.model.entities;
+package itu.com.CRM.features.request;
 
-
-import itu.com.CRM.model.common.BaseEntity;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class Expense extends BaseEntity {
-    private String number;
+public class UpdateExpenseRequest {
+    private String id;
     private String title;
     private String description;
     private String expenseDate;
     private String status;
-    private Double amount;
+    private double amount;
     private String campaignId;
+    private String updatedById;
 }
-

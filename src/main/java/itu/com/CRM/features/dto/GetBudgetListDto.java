@@ -1,23 +1,22 @@
-package itu.com.CRM.model.entities;
+package itu.com.CRM.features.dto;
 
 import java.time.LocalDateTime;
 
-import itu.com.CRM.model.common.BaseEntity;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class Budget extends BaseEntity {
-
+public class GetBudgetListDto {
     private String id;
     private String number;
     private String title;
     private String description;
     private String budgetDate;
-    private String status;
-    private Double amount;
+    private int status;
+    private String statusName;
+    private double amount;
     private String campaignId;
-    private Campaign campaign;
+    private String campaignName;
+    private LocalDateTime createdAtUtc;
 }
-
